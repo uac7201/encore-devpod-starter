@@ -14,7 +14,9 @@
   ],
   "remoteUser": "vscode",
   "remoteEnv": {
-    "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}"
+    "GH_HOST": "enercity.ghe.com",
+    "GHE_TOKEN": "${localEnv:GHE_TOKEN}", // create this PAT locally for enercity.ghe.com
+    "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}" // keep if you also clone from github.com
   },
   "customizations": {
     "vscode": {
