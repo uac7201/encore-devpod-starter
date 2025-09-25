@@ -78,10 +78,17 @@ RUN set -eux; \
     chmod +x /usr/local/bin/terragrunt
 
 # ---------- sops ----------
-# sops is available in Debian repos
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends sops \
-    && rm -rf /var/lib/apt/lists/*
+ARG SOPS_VERSION="3.8.1"
+ARG TARGETARCH
+RUN set -eux; \
+    case "$TARGETARCH" in \
+    amd64) SOPS_ARCH="amd64";; \
+    arm64) SOPS_ARCH="arm64";; \
+    *) echo "Unsupported arch: $TARGETARCH" && exit 1;; \
+    esac; \
+    curl -fsSL -o /usr/local/bin/sops \
+    "https://github.com/getsops/sops/releases/download/v${SOPS_VERSION}/sops-v${SOPS_VERSION}.linux.${SOPS_ARCH}"; \
+    chmod +x /usr/local/bin/sops
 
 # (optional) make sure local pip scripts are on PATH for all users
 RUN echo 'export PATH="$HOME/.local/bin:$PATH"' >> /etc/bash.bashrc
