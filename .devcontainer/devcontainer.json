@@ -6,12 +6,17 @@
   "runArgs": [
     "--init"
   ],
+  "onCreateCommand": "bash .devcontainer/clone-giithub-repos.sh",
   "postCreateCommand": "python -m pip install -U pip && pip install -r requirements.txt && python -m ipykernel install --user --name=devpod-spark",
   "forwardPorts": [
     4040,
     8888
   ],
   "remoteUser": "vscode",
+  // Optional: forward a PAT for private HTTPS clones (see script)
+  "remoteEnv": {
+    "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}"
+  },
   "customizations": {
     "vscode": {
       "settings": {
