@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+
 # List your repos here (HTTPS or SSH)
 REPOS=(
   "https://enercity.ghe.com/enercity/encore-airflow.git"
