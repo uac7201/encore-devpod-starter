@@ -49,5 +49,42 @@ RUN git clone --depth=1 https://github.com/ahmetb/kubectx /opt/kubectx \
     && /bin/bash -lc 'cat /opt/kubectx/completion/kubectx.bash > /etc/bash_completion.d/kubectx' \
     && /bin/bash -lc 'cat /opt/kubectx/completion/kubens.bash  > /etc/bash_completion.d/kubens'
 
+# ---------- Terraform ----------
+# Official HashiCorp APT repo
+RUN install -d -m 0755 /etc/apt/keyrings \
+    && curl -fsSL https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /etc/apt/keyrings/hashicorp.gpg \
+    && chmod 0644 /etc/apt/keyrings/hashicorp.gpg \
+    && . /etc/os-release \
+    && echo "deb [signed-by=/etc/apt/keyrings/hashicorp.gpg] https://apt.releases.hashicorp.com ${VERSION_CODENAME} main" \
+    > /etc/apt/sources.list.d/hashicorp.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends terraform \
+    && rm -rf /var/lib/apt/lists/*
+
+# Optional: enable terraform bash autocomplete for all users
+RUN terraform -install-autocomplete || true
+
+# ---------- Terragrunt ----------
+ARG TERRAGRUNT_VERSION="0.67.16"
+ARG TARGETARCH
+RUN set -eux; \
+    case "$TARGETARCH" in \
+    amd64) TARCH="amd64";; \
+    arm64) TARCH="arm64";; \
+    *) echo "Unsupported arch: $TARGETARCH" && exit 1;; \
+    esac; \
+    curl -fsSL -o /usr/local/bin/terragrunt \
+    "https://github.com/gruntwork-io/terragrunt/releases/download/v${TERRAGRUNT_VERSION}/terragrunt_linux_${TARCH}"; \
+    chmod +x /usr/local/bin/terragrunt
+
+# ---------- sops ----------
+# sops is available in Debian repos
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends sops \
+    && rm -rf /var/lib/apt/lists/*
+
+# (optional) make sure local pip scripts are on PATH for all users
+RUN echo 'export PATH="$HOME/.local/bin:$PATH"' >> /etc/bash.bashrc
+
 USER vscode
 WORKDIR /workspaces
