@@ -8,7 +8,6 @@
   ],
   "onCreateCommand": "bash .devcontainer/clone-github-repos.sh",
   "postCreateCommand": "python -m pip install -U pip && pip install -r requirements.txt && python -m ipykernel install --user --name=devpod-spark",
-  "postStartCommand": "bash .devcontainer/fetch-akv-secrets.sh",
   "forwardPorts": [
     4040,
     8888
