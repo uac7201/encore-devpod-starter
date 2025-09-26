@@ -49,6 +49,9 @@ RUN git clone --depth=1 https://github.com/ahmetb/kubectx /opt/kubectx \
     && /bin/bash -lc 'cat /opt/kubectx/completion/kubectx.bash > /etc/bash_completion.d/kubectx' \
     && /bin/bash -lc 'cat /opt/kubectx/completion/kubens.bash  > /etc/bash_completion.d/kubens'
 
+# Azure CLI
+RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+
 # ---------- Terraform ----------
 # Official HashiCorp APT repo
 RUN install -d -m 0755 /etc/apt/keyrings \
@@ -89,6 +92,16 @@ RUN set -eux; \
     curl -fsSL -o /usr/local/bin/sops \
     "https://github.com/getsops/sops/releases/download/v${SOPS_VERSION}/sops-v${SOPS_VERSION}.linux.${SOPS_ARCH}"; \
     chmod +x /usr/local/bin/sops
+
+# ---- load Key Vault env on every shell ----
+RUN printf '%s\n' \
+    '# /etc/profile.d/20-load-akv-env.sh' \
+    'if [ -f /home/vscode/.env.akv ]; then' \
+    '  # shellcheck disable=SC1091' \
+    '  . /home/vscode/.env.akv' \
+    'fi' \
+    > /etc/profile.d/20-load-akv-env.sh \
+    && chmod 0644 /etc/profile.d/20-load-akv-env.sh
 
 # (optional) make sure local pip scripts are on PATH for all users
 RUN echo 'export PATH="$HOME/.local/bin:$PATH"' >> /etc/bash.bashrc

@@ -8,6 +8,7 @@
   ],
   "onCreateCommand": "bash .devcontainer/clone-github-repos.sh",
   "postCreateCommand": "python -m pip install -U pip && pip install -r requirements.txt && python -m ipykernel install --user --name=devpod-spark",
+  "postStartCommand": "bash .devcontainer/fetch-akv-secrets.sh",
   "forwardPorts": [
     4040,
     8888
@@ -16,7 +17,11 @@
   "remoteEnv": {
     "GH_HOST": "enercity.ghe.com",
     "GHE_TOKEN": "${localEnv:GHE_TOKEN}", // create this PAT locally for enercity.ghe.com
-    "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}" // keep if you also clone from github.com
+    "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}", // keep if you also clone from github.com
+    "AZURE_TENANT_ID": "${localEnv:AZURE_TENANT_ID}",
+    "AZURE_CLIENT_ID": "${localEnv:AZURE_CLIENT_ID}",
+    "AZURE_CLIENT_SECRET": "${localEnv:AZURE_CLIENT_SECRET}",
+    "AKV_VAULT_NAME": "${localEnv:AKV_VAULT_NAME}"
   },
   "customizations": {
     "vscode": {
