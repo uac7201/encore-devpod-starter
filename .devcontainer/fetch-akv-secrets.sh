@@ -1,39 +1,52 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-: "${AKV_NAME:=}"
+# Required: these must be passed via devcontainer "remoteEnv"
+: "${AZURE_TENANT_ID:?missing}"
+: "${AZURE_CLIENT_ID:?missing}"
+: "${AZURE_CLIENT_SECRET:?missing}"
+: "${AKV_VAULT_NAME:?missing}"
 
-# Only run if we actually have credentials
-if [[ -z "${AZURE_TENANT_ID:-}" || -z "${AZURE_CLIENT_ID:-}" || -z "${AZURE_CLIENT_SECRET:-}" || -z "${AKV_NAME}" ]]; then
-  echo "INFO: Missing one of AZURE_TENANT_ID / AZURE_CLIENT_ID / AZURE_CLIENT_SECRET / AKV_NAME."
-  echo "INFO: Skipping Key Vault fetch. Open a new terminal after setting remoteEnv."
-  exit 0
-fi
+ENV_FILE="/home/vscode/.env.akv"
+EXPORT_FILE="/home/vscode/.env.akv.export"
 
-# Login non-interactively with a Service Principal
+echo "INFO: Logging in to Azure with service principal..."
 az login --service-principal \
-  -u "$AZURE_CLIENT_ID" \
-  -p "$AZURE_CLIENT_SECRET" \
-  --tenant "$AZURE_TENANT_ID" >/dev/null
+  --tenant "$AZURE_TENANT_ID" \
+  --username "$AZURE_CLIENT_ID" \
+  --password "$AZURE_CLIENT_SECRET" \
+  >/dev/null
 
-# (optional) set subscription if you passed it
-if [[ -n "${AZURE_SUBSCRIPTION_ID:-}" ]]; then
-  az account set --subscription "$AZURE_SUBSCRIPTION_ID"
-fi
+echo "INFO: Fetching secrets from Key Vault: $AKV_VAULT_NAME"
+# Write raw key=value pairs (use secret names as-is)
+: > "$ENV_FILE"
+while IFS= read -r name; do
+  # Skip disabled/archived etc. (we filter to enabled list)
+  val="$(az keyvault secret show --vault-name "$AKV_VAULT_NAME" --name "$name" --query 'value' -o tsv)"
+  printf '%s=%s\n' "$name" "$val" >> "$ENV_FILE"
+done < <(az keyvault secret list --vault-name "$AKV_VAULT_NAME" --query '[?attributes.enabled].name' -o tsv)
 
-# Which secrets to pull
-SECRETS=(
-  "APP_DB_PASSWORD"
-  "APP_API_KEY"
-)
+# Build an exportable version:
+#  - uppercase keys
+#  - replace non [A-Z0-9_] with _
+#  - prefix leading digits with _
+#  - emit `export KEY='value'` safely (handles special chars)
+: > "$EXPORT_FILE"
+while IFS='=' read -r k v; do
+  [[ -z "${k:-}" || "${k:0:1}" == "#" ]] && continue
+  sk="$(echo -n "$k" | tr '[:lower:]-' '[:upper:]_' | sed 's/[^A-Z0-9_]/_/g')"
+  [[ "$sk" =~ ^[0-9] ]] && sk="_$sk"
+  # shellcheck disable=SC2086 # we want printf %q quoting
+  printf 'export %s=%q\n' "$sk" "$v" >> "$EXPORT_FILE"
+done < "$ENV_FILE"
 
-OUT="/home/vscode/.env.akv"
-: > "$OUT"
-for s in "${SECRETS[@]}"; do
-  val="$(az keyvault secret show --vault-name "$AKV_NAME" --name "$s" --query value -o tsv)"
-  echo "export ${s}=$(printf '%q' "$val")" >> "$OUT"
-done
+chown vscode:vscode "$ENV_FILE" "$EXPORT_FILE"
+chmod 0600 "$ENV_FILE" "$EXPORT_FILE"
 
-chown vscode:vscode "$OUT"
-chmod 600 "$OUT"
-echo "Loaded $(wc -l < "$OUT") secrets into $OUT"
+# Auto-load on future shells (fallback if /etc/profile.d loader isn’t present)
+grep -qF '. ~/.env.akv.export' /home/vscode/.bashrc || echo '. ~/.env.akv.export' >> /home/vscode/.bashrc
+
+echo "INFO: Wrote $(wc -l < "$ENV_FILE") secrets to:"
+echo "  - $ENV_FILE          (raw)"
+echo "  - $EXPORT_FILE       (exportable)"
+echo "INFO: Open a NEW terminal, or run:  source $EXPORT_FILE"
