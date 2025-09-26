@@ -41,3 +41,18 @@ pytest -q
 
 ---
 Made for DevPod + VS Code devcontainers.
+
+
+```
+devpod up encore-workspace `
+  --source git:https://github.com/uac7201/encore-devpod-starter `
+   --reset `
+   --workspace-env GH_HOST=enercity.ghe.com `
+   --workspace-env GHE_TOKEN=$env:GHE_TOKEN `
+   --workspace-env GITHUB_TOKEN=$env:GITHUB_TOKEN `
+   --workspace-env AZURE_TENANT_ID=$env:AZURE_TENANT_ID `
+   --workspace-env AZURE_CLIENT_ID=$env:AZURE_CLIENT_ID `
+   --workspace-env AZURE_CLIENT_SECRET=$env:AZURE_CLIENT_SECRET `
+   --workspace-env AZURE_SUBSCRIPTION_ID=$env:AZURE_SUBSCRIPTION_ID `
+   --workspace-env AKV_VAULT_NAME=$env:AKV_VAULT_NAME
+```
