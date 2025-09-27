@@ -13,10 +13,10 @@ RUN apt-get update \
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 ENV PATH="$JAVA_HOME/bin:${PATH}"
 
-# ---------------- Base tools + build deps for pyenv ----------------
+# ---------------- Base tools + build deps for pyenv (now also installs micro) ----------------
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-    curl git bash-completion gnupg zsh ca-certificates \
+    curl git bash-completion gnupg zsh ca-certificates micro \
     build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev \
     libsqlite3-dev tk-dev libffi-dev liblzma-dev xz-utils unzip \
     && rm -rf /var/lib/apt/lists/*
@@ -131,7 +131,7 @@ RUN su -s /bin/bash -c 'test -d ~/.oh-my-zsh/custom/themes/spaceship/.git || git
     && su -s /bin/bash -c 'test -d ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions/.git || git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions' vscode \
     && su -s /bin/bash -c 'test -d ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting/.git || git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting' vscode
 
-# Make zsh default and write ~/.zshrc for vscode
+# Make zsh default and write ~/.zshrc for vscode (sets micro as default editor)
 RUN chsh -s /usr/bin/zsh vscode || true \
     && cat > /home/vscode/.zshrc <<'ZRC' \
     && chown vscode:vscode /home/vscode/.zshrc
@@ -163,10 +163,14 @@ fi
 # Locale & editor
 export LANG=C.UTF-8
 export LC_ALL=C.UTF-8
-export EDITOR=code
+export EDITOR=micro
+export VISUAL=micro
 
 source "$ZSH/oh-my-zsh.sh"
 ZRC
+
+# Ensure all login shells (not just zsh) default to micro as well
+RUN printf '%s\n' 'export EDITOR=micro' 'export VISUAL=micro' > /etc/profile.d/30-editor.sh
 
 # Make sure shells default to zsh
 ENV SHELL=/usr/bin/zsh
