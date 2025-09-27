@@ -7,14 +7,14 @@
     "--init"
   ],
   "onCreateCommand": "bash .devcontainer/clone-github-repos.sh",
-  "postStartCommand": "bash .devcontainer/fetch-akv-secrets.sh",
-  "postCreateCommand": "python -m pip install -U pip && pip install -r requirements.txt && python -m ipykernel install --user --name=devpod-spark",
+  // "postCreateCommand": "python -m pip install -U pip && pip install -r requirements.txt && python -m ipykernel install --user --name=devpod-spark",
   "forwardPorts": [
     4040,
     8888
   ],
   "remoteUser": "vscode",
   "remoteEnv": {
+    "SHELL": "/usr/bin/zsh",
     "GH_HOST": "enercity.ghe.com",
     "GHE_TOKEN": "${localEnv:GHE_TOKEN}", // create this PAT locally for enercity.ghe.com
     "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}", // keep if you also clone from github.com
@@ -26,6 +26,15 @@
   "customizations": {
     "vscode": {
       "settings": {
+        "terminal.integrated.profiles.linux": {
+          "zsh": {
+            "path": "/usr/bin/zsh",
+            "args": [
+              "-l"
+            ]
+          }
+        },
+        "terminal.integrated.defaultProfile.linux": "zsh",
         "python.defaultInterpreterPath": "/usr/local/bin/python",
         "python.analysis.typeCheckingMode": "basic",
         "python.testing.pytestEnabled": true,
@@ -38,9 +47,9 @@
       "extensions": [
         "ms-python.python",
         "ms-python.vscode-pylance",
-        "ms-toolsai.jupyter",
-        "ms-toolsai.jupyter-keymap",
-        "ms-toolsai.jupyter-renderers",
+        // "ms-toolsai.jupyter",
+        // "ms-toolsai.jupyter-keymap",
+        // "ms-toolsai.jupyter-renderers",
         "ms-azuretools.vscode-docker",
         "github.vscode-github-actions"
       ]

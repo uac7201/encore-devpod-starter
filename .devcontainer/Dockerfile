@@ -10,11 +10,10 @@ USER root
 RUN apt-get update \
     && apt-get install -y --no-install-recommends openjdk-17-jdk ca-certificates \
     && rm -rf /var/lib/apt/lists/*
-
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 ENV PATH="$JAVA_HOME/bin:${PATH}"
 
-# Tools: curl, git, bash-completion, gnupg, zsh + build deps we'll need later
+# Tools: curl, git, bash-completion, gnupg, zsh + build deps for pyenv
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
     curl git bash-completion gnupg zsh ca-certificates \
@@ -59,7 +58,6 @@ RUN git clone --depth=1 https://github.com/ahmetb/kubectx /opt/kubectx \
 RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash
 
 # ---------- Terraform ----------
-# Official HashiCorp APT repo
 RUN install -d -m 0755 /etc/apt/keyrings \
     && curl -fsSL https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /etc/apt/keyrings/hashicorp.gpg \
     && chmod 0644 /etc/apt/keyrings/hashicorp.gpg \
@@ -69,8 +67,6 @@ RUN install -d -m 0755 /etc/apt/keyrings \
     && apt-get update \
     && apt-get install -y --no-install-recommends terraform \
     && rm -rf /var/lib/apt/lists/*
-
-# Optional: enable terraform bash autocomplete for all users
 RUN terraform -install-autocomplete || true
 
 # ---------- Terragrunt ----------
@@ -99,7 +95,7 @@ RUN set -eux; \
     "https://github.com/getsops/sops/releases/download/v${SOPS_VERSION}/sops-v${SOPS_VERSION}.linux.${SOPS_ARCH}"; \
     chmod +x /usr/local/bin/sops
 
-# ---- load Key Vault env on every shell ----
+# ---- load Key Vault env on every *bash* shell ----
 RUN printf '%s\n' \
     '# /etc/profile.d/20-load-akv-env.sh' \
     'if [ -f /home/vscode/.env.akv ]; then' \
@@ -109,63 +105,55 @@ RUN printf '%s\n' \
     > /etc/profile.d/20-load-akv-env.sh \
     && chmod 0644 /etc/profile.d/20-load-akv-env.sh
 
-# (optional) make sure local pip scripts are on PATH for all users
+# Keep pip user bin on PATH for all users (bash shells)
 RUN echo 'export PATH="$HOME/.local/bin:$PATH"' >> /etc/bash.bashrc
 
-
-# ---------- uv (fast Python package manager) ----------
-# Install as the 'vscode' user so it's on their PATH at ~/.local/bin
+# ---------- uv (install for vscode user) ----------
 RUN su - vscode -c 'curl -LsSf https://astral.sh/uv/install.sh | sh' \
-    && su - vscode -c '$HOME/.local/bin/uv --version' \
-    && ln -s /home/vscode/.local/bin/uv /usr/local/bin/uv || true
+    && ln -sf /home/vscode/.local/bin/uv /usr/local/bin/uv
 
-
-# ---------- pyenv (install under /home/vscode) ----------
-# Install pyenv into /home/vscode and make it writable by the user
+# ---------- pyenv (for vscode) + pyenv-virtualenv plugin ----------
 RUN git clone https://github.com/pyenv/pyenv.git /home/vscode/.pyenv \
+    && git clone https://github.com/pyenv/pyenv-virtualenv.git /home/vscode/.pyenv/plugins/pyenv-virtualenv \
     && chown -R vscode:vscode /home/vscode/.pyenv
 
-# ---------- Oh My Zsh + spaceship theme ----------
-# Install oh-my-zsh into /home/vscode/.oh-my-zsh, spaceship theme, and two popular plugins
+# ---------- Oh My Zsh + spaceship theme + plugins ----------
 RUN git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git /home/vscode/.oh-my-zsh \
-    && git clone --depth=1 https://github.com/pascaldevink/spaceship-zsh-theme.git \
-    /home/vscode/.oh-my-zsh/custom/themes/spaceship \
-    && ln -s /home/vscode/.oh-my-zsh/custom/themes/spaceship/spaceship.zsh-theme \
-    /home/vscode/.oh-my-zsh/custom/themes/spaceship.zsh-theme \
-    && git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions \
-    /home/vscode/.oh-my-zsh/custom/plugins/zsh-autosuggestions \
-    && git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting \
-    /home/vscode/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting \
+    && git clone --depth=1 https://github.com/pascaldevink/spaceship-zsh-theme.git /home/vscode/.oh-my-zsh/custom/themes/spaceship \
+    && ln -sf /home/vscode/.oh-my-zsh/custom/themes/spaceship/spaceship.zsh-theme /home/vscode/.oh-my-zsh/custom/themes/spaceship.zsh-theme \
+    && git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions /home/vscode/.oh-my-zsh/custom/plugins/zsh-autosuggestions \
+    && git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting /home/vscode/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting \
     && chsh -s /usr/bin/zsh vscode || true \
     && chown -R vscode:vscode /home/vscode/.oh-my-zsh
 
-# Create a friendly ~/.zshrc for user "vscode"
-RUN printf '%s\n' \
-    'export ZSH="$HOME/.oh-my-zsh"' \
-    'ZSH_THEME="spaceship"' \
-    'plugins=(git z zsh-autosuggestions zsh-syntax-highlighting)' \
-    '' \
-    '# Load AKV exports if present' \
-    '[ -f "$HOME/.env.akv.export" ] && . "$HOME/.env.akv.export"' \
-    '' \
-    '# Put uv on PATH (installed under /root/.local/bin by installer, mirror to user PATH via direxist check)' \
-    'export PATH="$HOME/.local/bin:$PATH"' \
-    '[ -d "/root/.local/bin" ] && export PATH="/root/.local/bin:$PATH"' \
-    '' \
-    '# pyenv' \
-    'export PYENV_ROOT="$HOME/.pyenv"' \
-    'export PATH="$PYENV_ROOT/bin:$PATH"' \
-    'eval "$(pyenv init -)"' \
-    'eval "$(pyenv virtualenv-init -)"' \
-    '' \
-    '# Nice defaults' \
-    'export LANG=C.UTF-8' \
-    'export LC_ALL=C.UTF-8' \
-    'export EDITOR=code' \
-    '' \
-    'source "$ZSH/oh-my-zsh.sh"' \
-    > /home/vscode/.zshrc \
-    && chown vscode:vscode /home/vscode/.zshrc
+# ~/.zshrc for vscode (loads AKV exports, uv path, pyenv init, and OMZ)
+RUN cat > /home/vscode/.zshrc <<'ZRC'
+export ZSH="$HOME/.oh-my-zsh"
+ZSH_THEME="spaceship"
+plugins=(git kubectl zsh-autosuggestions zsh-syntax-highlighting)
+
+# Load Key Vault exports if present (from fetch-akv-secrets.sh)
+[ -f "$HOME/.env.akv.export" ] && . "$HOME/.env.akv.export"
+
+# Put per-user bin on PATH (uv lives here)
+export PATH="$HOME/.local/bin:$PATH"
+
+# pyenv
+export PYENV_ROOT="$HOME/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init -)"
+eval "$(pyenv virtualenv-init -)"
+
+# Locale & editor
+export LANG=C.UTF-8
+export LC_ALL=C.UTF-8
+export EDITOR=code
+
+source "$ZSH/oh-my-zsh.sh"
+ZRC
+RUN chown vscode:vscode /home/vscode/.zshrc
+ENV SHELL=/usr/bin/zsh
+
 
 USER vscode
 WORKDIR /workspaces
