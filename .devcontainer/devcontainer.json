@@ -8,6 +8,7 @@
   ],
   // "onCreateCommand": "bash .devcontainer/clone-github-repos.sh",
   "postCreateCommand": "python -m pip install -U pip && pip install -r requirements.txt && python -m ipykernel install --user --name=devpod-spark && bash .devcontainer/fetch-akv-secrets.sh || true",
+  "postStartCommand": "bash -lc 'for d in /workspaces/*/.git; do [ -d \"$d\" ] && git config --global --add safe.directory \"${d%/.git}\"; done'",
   "forwardPorts": [
     4040,
     8888
