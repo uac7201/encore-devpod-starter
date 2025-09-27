@@ -117,22 +117,21 @@ RUN git clone https://github.com/pyenv/pyenv.git /home/vscode/.pyenv \
     && chown -R vscode:vscode /home/vscode/.pyenv
 
 # ---------- Oh My Zsh + Spaceship + plugins (install as vscode) ----------
-ENV ZSH=/home/vscode/.oh-my-zsh \
-    ZSH_CUSTOM=/home/vscode/.oh-my-zsh/custom
+# Clone Oh My Zsh first (path must be empty / not exist)
+RUN su -s /bin/bash -c 'git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git /home/vscode/.oh-my-zsh' vscode
 
-# Create custom dirs up front with correct ownership
-RUN install -d -o vscode -g vscode /home/vscode/.oh-my-zsh \
-    && install -d -o vscode -g vscode "$ZSH_CUSTOM/plugins" "$ZSH_CUSTOM/themes"
+# Create custom dirs with correct ownership
+RUN install -d -o vscode -g vscode /home/vscode/.oh-my-zsh/custom/plugins \
+    && install -d -o vscode -g vscode /home/vscode/.oh-my-zsh/custom/themes
 
-# Clone oh-my-zsh, theme, and plugins as the vscode user (avoid login shell so env/paths are stable)
-RUN su -s /bin/bash -c 'git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git /home/vscode/.oh-my-zsh' vscode && \
-    su -s /bin/bash -c 'git clone --depth=1 https://github.com/pascaldevink/spaceship-zsh-theme.git \
-    /home/vscode/.oh-my-zsh/custom/themes/spaceship' vscode && \
-    su -s /bin/bash -c 'ln -sf /home/vscode/.oh-my-zsh/custom/themes/spaceship/spaceship.zsh-theme \
-    /home/vscode/.oh-my-zsh/custom/themes/spaceship.zsh-theme' vscode && \
-    su -s /bin/bash -c 'git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions \
-    /home/vscode/.oh-my-zsh/custom/plugins/zsh-autosuggestions' vscode && \
-    su -s /bin/bash -c 'git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting \
+# Clone theme & plugins
+RUN su -s /bin/bash -c 'git clone --depth=1 https://github.com/pascaldevink/spaceship-zsh-theme.git \
+    /home/vscode/.oh-my-zsh/custom/themes/spaceship' vscode \
+    && ln -sf /home/vscode/.oh-my-zsh/custom/themes/spaceship/spaceship.zsh-theme \
+    /home/vscode/.oh-my-zsh/custom/themes/spaceship.zsh-theme \
+    && su -s /bin/bash -c 'git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions \
+    /home/vscode/.oh-my-zsh/custom/plugins/zsh-autosuggestions' vscode \
+    && su -s /bin/bash -c 'git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting \
     /home/vscode/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting' vscode
 
 # Make zsh default and write ~/.zshrc for vscode
