@@ -112,9 +112,13 @@ RUN printf '%s\n' \
 # (optional) make sure local pip scripts are on PATH for all users
 RUN echo 'export PATH="$HOME/.local/bin:$PATH"' >> /etc/bash.bashrc
 
-# ---------- uv (as user vscode later via PATH) ----------
-# This installs into /root/.local/bin by default; we’ll expose it in zshrc for vscode
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh -s -- -y
+
+# ---------- uv (fast Python package manager) ----------
+# Install as the 'vscode' user so it's on their PATH at ~/.local/bin
+RUN su - vscode -c 'curl -LsSf https://astral.sh/uv/install.sh | sh' \
+    && su - vscode -c '$HOME/.local/bin/uv --version' \
+    && ln -s /home/vscode/.local/bin/uv /usr/local/bin/uv || true
+
 
 # ---------- pyenv (install under /home/vscode) ----------
 # Install pyenv into /home/vscode and make it writable by the user
