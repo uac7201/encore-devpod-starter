@@ -116,21 +116,27 @@ RUN git clone https://github.com/pyenv/pyenv.git /home/vscode/.pyenv \
     && git clone https://github.com/pyenv/pyenv-virtualenv.git /home/vscode/.pyenv/plugins/pyenv-virtualenv \
     && chown -R vscode:vscode /home/vscode/.pyenv
 
-# ---------------- Oh My Zsh + Spaceship theme + plugins ----------------
-RUN git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git /home/vscode/.oh-my-zsh \
-    && git clone --depth=1 https://github.com/pascaldevink/spaceship-zsh-theme.git \
-    /home/vscode/.oh-my-zsh/custom/themes/spaceship \
-    && ln -sf /home/vscode/.oh-my-zsh/custom/themes/spaceship/spaceship.zsh-theme \
-    /home/vscode/.oh-my-zsh/custom/themes/spaceship.zsh-theme \
-    && git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions \
-    /home/vscode/.oh-my-zsh/custom/plugins/zsh-autosuggestions \
-    && git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting \
-    /home/vscode/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting \
-    && chown -R vscode:vscode /home/vscode/.oh-my-zsh \
-    && chsh -s /usr/bin/zsh vscode || true
+# ---------- Oh My Zsh + Spaceship + plugins (install as vscode) ----------
+ENV ZSH=/home/vscode/.oh-my-zsh \
+    ZSH_CUSTOM=/home/vscode/.oh-my-zsh/custom
 
-# ---------------- zshrc for vscode (loads AKV exports, uv path, pyenv, theme, plugins) ----------------
-RUN cat > /home/vscode/.zshrc <<'ZRC'
+# Create custom dirs up front
+RUN install -d -o vscode -g vscode "$ZSH_CUSTOM/plugins" "$ZSH_CUSTOM/themes"
+
+# Clone oh-my-zsh, theme, and plugins as the vscode user
+RUN su - vscode -c 'git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git "$ZSH"' && \
+    su - vscode -c 'git clone --depth=1 https://github.com/pascaldevink/spaceship-zsh-theme.git \
+    "$ZSH_CUSTOM/themes/spaceship"' && \
+    su - vscode -c 'ln -sf "$ZSH_CUSTOM/themes/spaceship/spaceship.zsh-theme" \
+    "$ZSH_CUSTOM/themes/spaceship.zsh-theme"' && \
+    su - vscode -c 'git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions \
+    "$ZSH_CUSTOM/plugins/zsh-autosuggestions"' && \
+    su - vscode -c 'git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting \
+    "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"'
+
+# Make zsh default and write ~/.zshrc for vscode
+RUN chsh -s /usr/bin/zsh vscode || true && \
+    cat > /home/vscode/.zshrc <<'ZRC' && chown vscode:vscode /home/vscode/.zshrc
 export ZSH="$HOME/.oh-my-zsh"
 export ZSH_CUSTOM="$ZSH/custom"
 
@@ -163,10 +169,3 @@ export EDITOR=code
 
 source "$ZSH/oh-my-zsh.sh"
 ZRC
-RUN chown vscode:vscode /home/vscode/.zshrc
-
-# Make zsh default shell in container sessions (VS Code terminal picks this up)
-ENV SHELL=/usr/bin/zsh
-
-USER vscode
-WORKDIR /workspaces
