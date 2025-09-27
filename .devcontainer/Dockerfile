@@ -6,6 +6,13 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 USER root
 
+# ---------------- Corporate proxy (build-time) ----------------
+# Add your proxy and ensure NO_PROXY bypasses GHES + GitHub hosts
+ENV HTTP_PROXY=http://internet-proxy.stadtwerke-hannover.de:8080 \
+    HTTPS_PROXY=http://internet-proxy.stadtwerke-hannover.de:8080 \
+    NO_PROXY=localhost,127.0.0.1,::1,.stadtwerke-hannover.de,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,enercity.ghe.com,.enercity.ghe.com,github.com,.github.com,api.github.com,raw.githubusercontent.com,codeload.github.com,gist.github.com,objects.githubusercontent.com,githubcloud.githubusercontent.com,ghcr.io,pkg.github.com \
+    no_proxy=$NO_PROXY
+
 # ---------------- Java for Spark ----------------
 RUN apt-get update \
     && apt-get install -y --no-install-recommends openjdk-17-jdk ca-certificates \
@@ -13,12 +20,13 @@ RUN apt-get update \
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 ENV PATH="$JAVA_HOME/bin:${PATH}"
 
-# ---------------- Base tools + build deps for pyenv (and micro editor) ----------------
+# ---------------- Base tools + build deps for pyenv + micro ----------------
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-    curl git bash-completion gnupg zsh ca-certificates micro \
+    curl git bash-completion gnupg zsh ca-certificates \
     build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev \
     libsqlite3-dev tk-dev libffi-dev liblzma-dev xz-utils unzip \
+    micro \
     && rm -rf /var/lib/apt/lists/*
 
 # ---------------- kubectl ----------------
@@ -41,13 +49,12 @@ RUN set -eux; \
     arm64) K9S_ARCH="arm64";; \
     *) echo "Unsupported arch: $TARGETARCH" && exit 1;; \
     esac; \
-    curl -fsSL --retry 5 --retry-all-errors -o /tmp/k9s.tgz \
-    "https://github.com/derailed/k9s/releases/download/v${K9S_VERSION}/k9s_Linux_${K9S_ARCH}.tar.gz"; \
+    curl -fsSL -o /tmp/k9s.tgz "https://github.com/derailed/k9s/releases/download/v${K9S_VERSION}/k9s_Linux_${K9S_ARCH}.tar.gz"; \
     tar -xzf /tmp/k9s.tgz -C /usr/local/bin k9s; \
     rm -f /tmp/k9s.tgz
 
 # ---------------- kubectx & kubens ----------------
-RUN git clone --depth=1 https://github.com/ahmetb/kubectx /opt/kubectx || true \
+RUN git clone --depth=1 https://github.com/ahmetb/kubectx /opt/kubectx \
     && ln -sf /opt/kubectx/kubectx /usr/local/bin/kubectx \
     && ln -sf /opt/kubectx/kubens  /usr/local/bin/kubens \
     && mkdir -p /etc/bash_completion.d \
@@ -55,11 +62,11 @@ RUN git clone --depth=1 https://github.com/ahmetb/kubectx /opt/kubectx || true \
     && /bin/bash -lc 'cat /opt/kubectx/completion/kubens.bash  > /etc/bash_completion.d/kubens'
 
 # ---------------- Azure CLI ----------------
-RUN curl -sL --retry 5 --retry-all-errors https://aka.ms/InstallAzureCLIDeb | bash
+RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash
 
 # ---------------- Terraform (HashiCorp repo) ----------------
 RUN install -d -m 0755 /etc/apt/keyrings \
-    && curl -fsSL --retry 5 --retry-all-errors https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /etc/apt/keyrings/hashicorp.gpg \
+    && curl -fsSL https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /etc/apt/keyrings/hashicorp.gpg \
     && chmod 0644 /etc/apt/keyrings/hashicorp.gpg \
     && . /etc/os-release \
     && echo "deb [signed-by=/etc/apt/keyrings/hashicorp.gpg] https://apt.releases.hashicorp.com ${VERSION_CODENAME} main" \
@@ -78,7 +85,7 @@ RUN set -eux; \
     arm64) TARCH="arm64";; \
     *) echo "Unsupported arch: $TARGETARCH" && exit 1;; \
     esac; \
-    curl -fsSL --retry 5 --retry-all-errors -o /usr/local/bin/terragrunt \
+    curl -fsSL -o /usr/local/bin/terragrunt \
     "https://github.com/gruntwork-io/terragrunt/releases/download/v${TERRAGRUNT_VERSION}/terragrunt_linux_${TARCH}"; \
     chmod +x /usr/local/bin/terragrunt
 
@@ -91,7 +98,7 @@ RUN set -eux; \
     arm64) SOPS_ARCH="arm64";; \
     *) echo "Unsupported arch: $TARGETARCH" && exit 1;; \
     esac; \
-    curl -fsSL --retry 5 --retry-all-errors -o /usr/local/bin/sops \
+    curl -fsSL -o /usr/local/bin/sops \
     "https://github.com/getsops/sops/releases/download/v${SOPS_VERSION}/sops-v${SOPS_VERSION}.linux.${SOPS_ARCH}"; \
     chmod +x /usr/local/bin/sops
 
@@ -108,45 +115,30 @@ RUN printf '%s\n' \
 # Keep pip user bin on PATH for all users (bash shells)
 RUN echo 'export PATH="$HOME/.local/bin:$PATH"' >> /etc/bash.bashrc
 
-# ---------------- System-wide proxy (so non-login/root processes inherit) ----------------
-RUN printf '%s\n' \
-    'HTTP_PROXY=http://internet-proxy.stadtwerke-hannover.de:8080' \
-    'HTTPS_PROXY=http://internet-proxy.stadtwerke-hannover.de:8080' \
-    'NO_PROXY=localhost,127.0.0.1,::1,.stadtwerke-hannover.de,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16' \
-    'http_proxy=http://internet-proxy.stadtwerke-hannover.de:8080' \
-    'https_proxy=http://internet-proxy.stadtwerke-hannover.de:8080' \
-    'no_proxy=localhost,127.0.0.1,::1,.stadtwerke-hannover.de,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16' \
-    >> /etc/environment
-
 # ---------------- uv (install for vscode user) ----------------
 RUN su - vscode -c 'curl -LsSf https://astral.sh/uv/install.sh | sh' \
     && ln -sf /home/vscode/.local/bin/uv /usr/local/bin/uv
 
 # ---------------- pyenv (+ pyenv-virtualenv) for vscode ----------------
-RUN git clone https://github.com/pyenv/pyenv.git /home/vscode/.pyenv || true \
-    && git clone https://github.com/pyenv/pyenv-virtualenv.git /home/vscode/.pyenv/plugins/pyenv-virtualenv || true \
+RUN git clone https://github.com/pyenv/pyenv.git /home/vscode/.pyenv \
+    && git clone https://github.com/pyenv/pyenv-virtualenv.git /home/vscode/.pyenv/plugins/pyenv-virtualenv \
     && chown -R vscode:vscode /home/vscode/.pyenv
 
-# ---------- Oh My Zsh + Spaceship + plugins (install as vscode) ----------
-# Ensure clean, owned directories (idempotent)
+# ---------------- Oh My Zsh + Spaceship + plugins (idempotent) ----------------
+# Create target dirs (idempotent) with correct ownership
 RUN install -d -o vscode -g vscode /home/vscode/.oh-my-zsh \
     && install -d -o vscode -g vscode /home/vscode/.oh-my-zsh/custom/plugins \
     && install -d -o vscode -g vscode /home/vscode/.oh-my-zsh/custom/themes
 
-
-# Clone OMZ, theme & plugins if missing (disable proxy just for these clones)
-RUN su -s /bin/bash -c '[ -d /home/vscode/.oh-my-zsh/.git ] \
-    || git -c http.proxy= -c https.proxy= clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git /home/vscode/.oh-my-zsh' vscode \
-    && su -s /bin/bash -c '[ -d /home/vscode/.oh-my-zsh/custom/themes/spaceship/.git ] \
-    || git -c http.proxy= -c https.proxy= clone --depth=1 https://github.com/pascaldevink/spaceship-zsh-theme.git /home/vscode/.oh-my-zsh/custom/themes/spaceship' vscode \
+# Clone OMZ, theme & plugins if missing
+RUN su -s /bin/bash -c '[ -d /home/vscode/.oh-my-zsh/.git ] || git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git /home/vscode/.oh-my-zsh' vscode \
+    && su -s /bin/bash -c '[ -d /home/vscode/.oh-my-zsh/custom/themes/spaceship/.git ] || git clone --depth=1 https://github.com/pascaldevink/spaceship-zsh-theme.git /home/vscode/.oh-my-zsh/custom/themes/spaceship' vscode \
     && ln -sf /home/vscode/.oh-my-zsh/custom/themes/spaceship/spaceship.zsh-theme /home/vscode/.oh-my-zsh/custom/themes/spaceship.zsh-theme \
-    && su -s /bin/bash -c '[ -d /home/vscode/.oh-my-zsh/custom/plugins/zsh-autosuggestions/.git ] \
-    || git -c http.proxy= -c https.proxy= clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions /home/vscode/.oh-my-zsh/custom/plugins/zsh-autosuggestions' vscode \
-    && su -s /bin/bash -c '[ -d /home/vscode/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting/.git ] \
-    || git -c http.proxy= -c https.proxy= clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting /home/vscode/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting' vscode
+    && su -s /bin/bash -c '[ -d /home/vscode/.oh-my-zsh/custom/plugins/zsh-autosuggestions/.git ] || git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions /home/vscode/.oh-my-zsh/custom/plugins/zsh-autosuggestions' vscode \
+    && su -s /bin/bash -c '[ -d /home/vscode/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting/.git ] || git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting /home/vscode/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting' vscode \
+    && chown -R vscode:vscode /home/vscode/.oh-my-zsh
 
-
-# Make zsh default and write ~/.zshrc for vscode (includes corporate proxy exports)
+# Make zsh default and write ~/.zshrc for vscode
 RUN chsh -s /usr/bin/zsh vscode || true \
     && cat > /home/vscode/.zshrc <<'ZRC' \
     && chown vscode:vscode /home/vscode/.zshrc
@@ -157,20 +149,19 @@ ZSH_THEME="spaceship"
 # keep zsh-syntax-highlighting LAST
 plugins=(git kubectl zsh-autosuggestions zsh-syntax-highlighting)
 
+# Corporate proxy for interactive shells
+export HTTP_PROXY="http://internet-proxy.stadtwerke-hannover.de:8080"
+export HTTPS_PROXY="http://internet-proxy.stadtwerke-hannover.de:8080"
+export NO_PROXY='localhost,127.0.0.1,::1,.stadtwerke-hannover.de,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,enercity.ghe.com,.enercity.ghe.com,github.com,.github.com,api.github.com,raw.githubusercontent.com,codeload.github.com,gist.github.com,objects.githubusercontent.com,githubcloud.githubusercontent.com,ghcr.io,pkg.github.com'
+export no_proxy="$NO_PROXY"
+export http_proxy="$HTTP_PROXY"
+export https_proxy="$HTTPS_PROXY"
+
 # Load Key Vault exports if present (from fetch-akv-secrets.sh)
 [ -f "$HOME/.env.akv.export" ] && . "$HOME/.env.akv.export"
 
 # Per-user bin (uv lives here)
 export PATH="$HOME/.local/bin:$PATH"
-
-# --- Corporate proxy ---
-export HTTP_PROXY="http://internet-proxy.stadtwerke-hannover.de:8080"
-export HTTPS_PROXY="http://internet-proxy.stadtwerke-hannover.de:8080"
-export NO_PROXY="localhost,127.0.0.1,::1,.stadtwerke-hannover.de,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
-export http_proxy="$HTTP_PROXY"
-export https_proxy="$HTTPS_PROXY"
-export no_proxy="$NO_PROXY"
-# --- end proxy ---
 
 # pyenv
 export PYENV_ROOT="$HOME/.pyenv"
@@ -184,15 +175,14 @@ if command -v kubectl >/dev/null; then
   compdef __start_kubectl kubectl
 fi
 
-# Locale & editor
-export LANG=C.UTF-8
-export LC_ALL=C.UTF-8
+# Default editor
 export EDITOR=micro
+export VISUAL=micro
 
 source "$ZSH/oh-my-zsh.sh"
 ZRC
 
-# Make zsh the default shell env-wide (VS Code terminal picks this up too)
+# Make zsh the default shell environment-wide (VS Code terminal picks this up)
 ENV SHELL=/usr/bin/zsh
 
 USER vscode
