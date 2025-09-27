@@ -120,19 +120,20 @@ RUN git clone https://github.com/pyenv/pyenv.git /home/vscode/.pyenv \
 ENV ZSH=/home/vscode/.oh-my-zsh \
     ZSH_CUSTOM=/home/vscode/.oh-my-zsh/custom
 
-# Create custom dirs up front
-RUN install -d -o vscode -g vscode "$ZSH_CUSTOM/plugins" "$ZSH_CUSTOM/themes"
+# Create custom dirs up front with correct ownership
+RUN install -d -o vscode -g vscode /home/vscode/.oh-my-zsh \
+    && install -d -o vscode -g vscode "$ZSH_CUSTOM/plugins" "$ZSH_CUSTOM/themes"
 
-# Clone oh-my-zsh, theme, and plugins as the vscode user
-RUN su - vscode -c 'git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git "$ZSH"' && \
-    su - vscode -c 'git clone --depth=1 https://github.com/pascaldevink/spaceship-zsh-theme.git \
-    "$ZSH_CUSTOM/themes/spaceship"' && \
-    su - vscode -c 'ln -sf "$ZSH_CUSTOM/themes/spaceship/spaceship.zsh-theme" \
-    "$ZSH_CUSTOM/themes/spaceship.zsh-theme"' && \
-    su - vscode -c 'git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions \
-    "$ZSH_CUSTOM/plugins/zsh-autosuggestions"' && \
-    su - vscode -c 'git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting \
-    "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"'
+# Clone oh-my-zsh, theme, and plugins as the vscode user (avoid login shell so env/paths are stable)
+RUN su -s /bin/bash -c 'git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git /home/vscode/.oh-my-zsh' vscode && \
+    su -s /bin/bash -c 'git clone --depth=1 https://github.com/pascaldevink/spaceship-zsh-theme.git \
+    /home/vscode/.oh-my-zsh/custom/themes/spaceship' vscode && \
+    su -s /bin/bash -c 'ln -sf /home/vscode/.oh-my-zsh/custom/themes/spaceship/spaceship.zsh-theme \
+    /home/vscode/.oh-my-zsh/custom/themes/spaceship.zsh-theme' vscode && \
+    su -s /bin/bash -c 'git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions \
+    /home/vscode/.oh-my-zsh/custom/plugins/zsh-autosuggestions' vscode && \
+    su -s /bin/bash -c 'git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting \
+    /home/vscode/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting' vscode
 
 # Make zsh default and write ~/.zshrc for vscode
 RUN chsh -s /usr/bin/zsh vscode || true && \
