@@ -109,30 +109,27 @@ RUN echo 'export PATH="$HOME/.local/bin:$PATH"' >> /etc/bash.bashrc
 
 # ---------------- uv (install for vscode user) ----------------
 RUN su - vscode -c 'curl -LsSf https://astral.sh/uv/install.sh | sh' \
-    && ln -sf /home/vscode/.local/bin/uv /usr/local/bin/uv
+    && ln -sf /home/vscode/.local/bin/uv /usr/local/bin/uv || true
 
 # ---------------- pyenv (+ pyenv-virtualenv) for vscode ----------------
-RUN git clone https://github.com/pyenv/pyenv.git /home/vscode/.pyenv \
-    && git clone https://github.com/pyenv/pyenv-virtualenv.git /home/vscode/.pyenv/plugins/pyenv-virtualenv \
+RUN test -d /home/vscode/.pyenv || git clone https://github.com/pyenv/pyenv.git /home/vscode/.pyenv \
+    && test -d /home/vscode/.pyenv/plugins/pyenv-virtualenv || git clone https://github.com/pyenv/pyenv-virtualenv.git /home/vscode/.pyenv/plugins/pyenv-virtualenv \
     && chown -R vscode:vscode /home/vscode/.pyenv
 
-# ---------- Oh My Zsh + Spaceship + plugins (install as vscode) ----------
-# Clone Oh My Zsh first (target must not exist / be empty)
-RUN su -s /bin/bash -c 'git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git /home/vscode/.oh-my-zsh' vscode
-
-# Create custom dirs with correct ownership
-RUN install -d -o vscode -g vscode /home/vscode/.oh-my-zsh/custom/plugins \
+# ---------- Oh My Zsh + Spaceship + plugins (idempotent, install as vscode) ----------
+# Ensure base dirs and ownership
+RUN install -d -o vscode -g vscode /home/vscode/.oh-my-zsh \
+    && install -d -o vscode -g vscode /home/vscode/.oh-my-zsh/custom/plugins \
     && install -d -o vscode -g vscode /home/vscode/.oh-my-zsh/custom/themes
 
-# Clone theme & plugins
-RUN su -s /bin/bash -c 'git clone --depth=1 https://github.com/pascaldevink/spaceship-zsh-theme.git \
-    /home/vscode/.oh-my-zsh/custom/themes/spaceship' vscode \
-    && ln -sf /home/vscode/.oh-my-zsh/custom/themes/spaceship/spaceship.zsh-theme \
-    /home/vscode/.oh-my-zsh/custom/themes/spaceship.zsh-theme \
-    && su -s /bin/bash -c 'git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions \
-    /home/vscode/.oh-my-zsh/custom/plugins/zsh-autosuggestions' vscode \
-    && su -s /bin/bash -c 'git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting \
-    /home/vscode/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting' vscode
+# Clone/update OMZ if needed
+RUN su -s /bin/bash -c 'test -d ~/.oh-my-zsh/.git || { rm -rf ~/.oh-my-zsh; git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git ~/.oh-my-zsh; }' vscode
+
+# Theme + plugins (only if missing)
+RUN su -s /bin/bash -c 'test -d ~/.oh-my-zsh/custom/themes/spaceship/.git || git clone --depth=1 https://github.com/pascaldevink/spaceship-zsh-theme.git ~/.oh-my-zsh/custom/themes/spaceship' vscode \
+    && ln -sf /home/vscode/.oh-my-zsh/custom/themes/spaceship/spaceship.zsh-theme /home/vscode/.oh-my-zsh/custom/themes/spaceship.zsh-theme \
+    && su -s /bin/bash -c 'test -d ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions/.git || git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions' vscode \
+    && su -s /bin/bash -c 'test -d ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting/.git || git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting' vscode
 
 # Make zsh default and write ~/.zshrc for vscode
 RUN chsh -s /usr/bin/zsh vscode || true \
