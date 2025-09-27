@@ -143,12 +143,12 @@ ZSH_THEME="spaceship"
 plugins=(git kubectl zsh-autosuggestions zsh-syntax-highlighting)
 
 # Corporate proxy for interactive shells
-export HTTP_PROXY="http://internet-proxy.stadtwerke-hannover.de:8080"
-export HTTPS_PROXY="http://internet-proxy.stadtwerke-hannover.de:8080"
-export NO_PROXY='localhost,127.0.0.1,::1,.stadtwerke-hannover.de,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,enercity.ghe.com,.enercity.ghe.com,github.com,.github.com,api.github.com,raw.githubusercontent.com,codeload.github.com,gist.github.com,objects.githubusercontent.com,githubcloud.githubusercontent.com,ghcr.io,pkg.github.com'
-export no_proxy="$NO_PROXY"
-export http_proxy="$HTTP_PROXY"
-export https_proxy="$HTTPS_PROXY"
+# export HTTP_PROXY="http://internet-proxy.stadtwerke-hannover.de:8080"
+# export HTTPS_PROXY="http://internet-proxy.stadtwerke-hannover.de:8080"
+# export NO_PROXY='localhost,127.0.0.1,::1,.stadtwerke-hannover.de,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,enercity.ghe.com,.enercity.ghe.com,github.com,.github.com,api.github.com,raw.githubusercontent.com,codeload.github.com,gist.github.com,objects.githubusercontent.com,githubcloud.githubusercontent.com,ghcr.io,pkg.github.com'
+# export no_proxy="$NO_PROXY"
+# export http_proxy="$HTTP_PROXY"
+# export https_proxy="$HTTPS_PROXY"
 
 # Load Key Vault exports if present (from fetch-akv-secrets.sh)
 [ -f "$HOME/.env.akv.export" ] && . "$HOME/.env.akv.export"
