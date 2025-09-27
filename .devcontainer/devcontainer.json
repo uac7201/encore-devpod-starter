@@ -1,5 +1,5 @@
 {
-  "name": "Python + PySpark (DevPod)",
+  "name": "Encore (DevPod)",
   "build": {
     "dockerfile": "Dockerfile"
   },
@@ -7,7 +7,7 @@
     "--init"
   ],
   "onCreateCommand": "bash .devcontainer/clone-github-repos.sh",
-  // "postCreateCommand": "python -m pip install -U pip && pip install -r requirements.txt && python -m ipykernel install --user --name=devpod-spark",
+  "postCreateCommand": "python -m pip install -U pip && pip install -r requirements.txt && python -m ipykernel install --user --name=devpod-spark && bash .devcontainer/fetch-akv-secrets.sh || true",
   "forwardPorts": [
     4040,
     8888
@@ -47,11 +47,54 @@
       "extensions": [
         "ms-python.python",
         "ms-python.vscode-pylance",
-        // "ms-toolsai.jupyter",
-        // "ms-toolsai.jupyter-keymap",
-        // "ms-toolsai.jupyter-renderers",
+        "ms-toolsai.jupyter",
+        "ms-toolsai.jupyter-keymap",
+        "ms-toolsai.jupyter-renderers",
         "ms-azuretools.vscode-docker",
-        "github.vscode-github-actions"
+        "github.vscode-github-actions",
+        "ms-toolsai.jupyter",
+        "ms-toolsai.jupyter-renderers",
+        "ms-azuretools.vscode-docker",
+        "github.vscode-github-actions",
+        "4ops.terraform",
+        "christian-kohler.path-intellisense",
+        "eamodio.gitlens",
+        "github.copilot",
+        "github.copilot-chat",
+        "github.vscode-github-actions",
+        "hashicorp.terraform",
+        "innoverio.vscode-dbt-power-user",
+        "ms-azure-load-testing.microsoft-testing",
+        "ms-azuretools.azure-dev",
+        "ms-azuretools.vscode-azure-github-copilot",
+        "ms-azuretools.vscode-azure-mcp-server",
+        "ms-azuretools.vscode-azureappservice",
+        "ms-azuretools.vscode-azurecontainerapps",
+        "ms-azuretools.vscode-azurefunctions",
+        "ms-azuretools.vscode-azureresourcegroups",
+        "ms-azuretools.vscode-azurestaticwebapps",
+        "ms-azuretools.vscode-azurestorage",
+        "ms-azuretools.vscode-azurevirtualmachines",
+        "ms-azuretools.vscode-containers",
+        "ms-azuretools.vscode-cosmosdb",
+        "ms-python.black-formatter",
+        "ms-python.debugpy",
+        "ms-python.vscode-python-envs",
+        "ms-toolsai.jupyter",
+        "ms-toolsai.jupyter-keymap",
+        "ms-toolsai.jupyter-renderers",
+        "ms-vscode-remote.remote-containers",
+        "ms-vscode-remote.remote-ssh",
+        "ms-vscode-remote.remote-ssh-edit",
+        "ms-vscode.remote-explorer",
+        "ms-vscode.vscode-node-azure-pack",
+        "ms-windows-ai-studio.windows-ai-studio",
+        "ms-azuretools.vscode-docker",
+        "pkief.material-icon-theme",
+        "redhat.vscode-yaml",
+        "samuelcolvin.jinjahtml",
+        "teamsdevapp.vscode-ai-foundry",
+        "altimateai.vscode-altimate-mcp-server"
       ]
     }
   }
