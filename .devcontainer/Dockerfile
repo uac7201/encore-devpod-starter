@@ -6,13 +6,6 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 USER root
 
-# ---------------- Corporate proxy (build-time) ----------------
-# Add your proxy and ensure NO_PROXY bypasses GHES + GitHub hosts
-ENV HTTP_PROXY=http://internet-proxy.stadtwerke-hannover.de:8080 \
-    HTTPS_PROXY=http://internet-proxy.stadtwerke-hannover.de:8080 \
-    NO_PROXY=localhost,127.0.0.1,::1,.stadtwerke-hannover.de,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,enercity.ghe.com,.enercity.ghe.com,github.com,.github.com,api.github.com,raw.githubusercontent.com,codeload.github.com,gist.github.com,objects.githubusercontent.com,githubcloud.githubusercontent.com,ghcr.io,pkg.github.com \
-    no_proxy=$NO_PROXY
-
 # ---------------- Java for Spark ----------------
 RUN apt-get update \
     && apt-get install -y --no-install-recommends openjdk-17-jdk ca-certificates \
