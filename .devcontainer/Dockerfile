@@ -133,12 +133,18 @@ RUN install -d -o vscode -g vscode /home/vscode/.oh-my-zsh \
     && install -d -o vscode -g vscode /home/vscode/.oh-my-zsh/custom/plugins \
     && install -d -o vscode -g vscode /home/vscode/.oh-my-zsh/custom/themes
 
-# Clone OMZ, theme & plugins if missing
-RUN su -s /bin/bash -c '[ -d /home/vscode/.oh-my-zsh/.git ] || git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git /home/vscode/.oh-my-zsh' vscode \
-    && su -s /bin/bash -c '[ -d /home/vscode/.oh-my-zsh/custom/themes/spaceship/.git ] || git clone --depth=1 https://github.com/pascaldevink/spaceship-zsh-theme.git /home/vscode/.oh-my-zsh/custom/themes/spaceship' vscode \
+
+# Clone OMZ, theme & plugins if missing (disable proxy just for these clones)
+RUN su -s /bin/bash -c '[ -d /home/vscode/.oh-my-zsh/.git ] \
+    || git -c http.proxy= -c https.proxy= clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git /home/vscode/.oh-my-zsh' vscode \
+    && su -s /bin/bash -c '[ -d /home/vscode/.oh-my-zsh/custom/themes/spaceship/.git ] \
+    || git -c http.proxy= -c https.proxy= clone --depth=1 https://github.com/pascaldevink/spaceship-zsh-theme.git /home/vscode/.oh-my-zsh/custom/themes/spaceship' vscode \
     && ln -sf /home/vscode/.oh-my-zsh/custom/themes/spaceship/spaceship.zsh-theme /home/vscode/.oh-my-zsh/custom/themes/spaceship.zsh-theme \
-    && su -s /bin/bash -c '[ -d /home/vscode/.oh-my-zsh/custom/plugins/zsh-autosuggestions/.git ] || git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions /home/vscode/.oh-my-zsh/custom/plugins/zsh-autosuggestions' vscode \
-    && su -s /bin/bash -c '[ -d /home/vscode/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting/.git ] || git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting /home/vscode/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting' vscode
+    && su -s /bin/bash -c '[ -d /home/vscode/.oh-my-zsh/custom/plugins/zsh-autosuggestions/.git ] \
+    || git -c http.proxy= -c https.proxy= clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions /home/vscode/.oh-my-zsh/custom/plugins/zsh-autosuggestions' vscode \
+    && su -s /bin/bash -c '[ -d /home/vscode/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting/.git ] \
+    || git -c http.proxy= -c https.proxy= clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting /home/vscode/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting' vscode
+
 
 # Make zsh default and write ~/.zshrc for vscode (includes corporate proxy exports)
 RUN chsh -s /usr/bin/zsh vscode || true \
