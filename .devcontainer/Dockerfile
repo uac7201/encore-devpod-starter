@@ -117,7 +117,7 @@ RUN git clone https://github.com/pyenv/pyenv.git /home/vscode/.pyenv \
     && chown -R vscode:vscode /home/vscode/.pyenv
 
 # ---------- Oh My Zsh + Spaceship + plugins (install as vscode) ----------
-# Clone Oh My Zsh first (path must be empty / not exist)
+# Clone Oh My Zsh first (target must not exist / be empty)
 RUN su -s /bin/bash -c 'git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git /home/vscode/.oh-my-zsh' vscode
 
 # Create custom dirs with correct ownership
@@ -135,8 +135,9 @@ RUN su -s /bin/bash -c 'git clone --depth=1 https://github.com/pascaldevink/spac
     /home/vscode/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting' vscode
 
 # Make zsh default and write ~/.zshrc for vscode
-RUN chsh -s /usr/bin/zsh vscode || true && \
-    cat > /home/vscode/.zshrc <<'ZRC' && chown vscode:vscode /home/vscode/.zshrc
+RUN chsh -s /usr/bin/zsh vscode || true \
+    && cat > /home/vscode/.zshrc <<'ZRC' \
+    && chown vscode:vscode /home/vscode/.zshrc
 export ZSH="$HOME/.oh-my-zsh"
 export ZSH_CUSTOM="$ZSH/custom"
 
@@ -169,3 +170,9 @@ export EDITOR=code
 
 source "$ZSH/oh-my-zsh.sh"
 ZRC
+
+# Make sure shells default to zsh
+ENV SHELL=/usr/bin/zsh
+
+USER vscode
+WORKDIR /workspaces
