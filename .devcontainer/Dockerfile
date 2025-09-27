@@ -106,5 +106,77 @@ RUN printf '%s\n' \
 # (optional) make sure local pip scripts are on PATH for all users
 RUN echo 'export PATH="$HOME/.local/bin:$PATH"' >> /etc/bash.bashrc
 
+# ===== Zsh + Oh My Zsh + Spaceship, uv, pyenv =====
+# Base deps for zsh & pyenv build, plus fonts for prompt glyphs
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    zsh fonts-powerline ca-certificates \
+    build-essential make \
+    libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev \
+    llvm libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev \
+    libffi-dev liblzma-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Oh My Zsh (unattended) for user "vscode"
+RUN su - vscode -c 'sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended || true'
+
+# Spaceship ZSH theme (your requested repo)
+RUN su - vscode -c '\
+    mkdir -p ~/.oh-my-zsh/custom/themes && \
+    git clone --depth=1 https://github.com/pascaldevink/spaceship-zsh-theme.git \
+    ~/.oh-my-zsh/custom/themes/spaceship && \
+    ln -sf ~/.oh-my-zsh/custom/themes/spaceship/spaceship.zsh-theme \
+    ~/.oh-my-zsh/custom/themes/spaceship.zsh-theme \
+    '
+
+# zsh plugins
+RUN su - vscode -c '\
+    git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions \
+    ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions && \
+    git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting \
+    ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting \
+    '
+
+# uv (installs to ~/.local/bin for user)
+RUN su - vscode -c 'curl -LsSf https://astral.sh/uv/install.sh | sh'
+
+# pyenv (+ virtualenv)
+RUN su - vscode -c '\
+    git clone https://github.com/pyenv/pyenv.git ~/.pyenv && \
+    mkdir -p ~/.pyenv/plugins && \
+    git clone https://github.com/pyenv/pyenv-virtualenv.git ~/.pyenv/plugins/pyenv-virtualenv \
+    '
+
+# .zshrc for user "vscode"
+RUN su - vscode -c 'cat > ~/.zshrc << "ZRC"
+export ZSH="$HOME/.oh-my-zsh"
+ZSH_THEME="spaceship"
+plugins=(git z zsh-autosuggestions zsh-syntax-highlighting)
+
+# Load AKV exports if present (created by your fetch script)
+[ -f "$HOME/.env.akv.export" ] && . "$HOME/.env.akv.export"
+
+# uv
+export PATH="$HOME/.local/bin:$PATH"
+
+# pyenv
+export PYENV_ROOT="$HOME/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init -)"
+eval "$(pyenv virtualenv-init -)"
+
+# Nice defaults
+export LANG=C.UTF-8
+export LC_ALL=C.UTF-8
+export EDITOR=code
+
+source "$ZSH/oh-my-zsh.sh"
+
+# Optional spaceship prompt tweaks:
+# export SPACESHIP_PROMPT_ORDER=(time user dir git node python venv exec_time line_sep battery char)
+ZRC'
+
+# Make zsh the default shell for vscode
+RUN chsh -s /usr/bin/zsh vscode
+
 USER vscode
 WORKDIR /workspaces
