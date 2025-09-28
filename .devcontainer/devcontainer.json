@@ -4,7 +4,8 @@
     "dockerfile": "Dockerfile"
   },
   "runArgs": [
-    "--init"
+    "--init",
+    "--privileged"
   ],
   // "onCreateCommand": "bash .devcontainer/clone-github-repos.sh",
   "postCreateCommand": "python -m pip install -U pip && pip install -r requirements.txt && python -m ipykernel install --user --name=devpod-spark && bash .devcontainer/fetch-akv-secrets.sh || true",
@@ -13,6 +14,9 @@
     4040,
     8888
   ],
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
   "mounts": [
     "source=${localEnv:MOUNT_PATH},target=/workspaces/,type=bind,consistency=cached"
   ],
