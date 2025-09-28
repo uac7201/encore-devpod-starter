@@ -98,12 +98,13 @@ RUN set -eux; \
 # ---------------- Load Key Vault env in login shells (bash) ----------------
 RUN printf '%s\n' \
     '# /etc/profile.d/20-load-akv-env.sh' \
-    'if [ -f /home/vscode/.env.akv ]; then' \
+    'if [ -f /home/vscode/.env.akv.export ]; then' \
     '  # shellcheck disable=SC1091' \
-    '  . /home/vscode/.env.akv' \
+    '  . /home/vscode/.env.akv.export' \
     'fi' \
     > /etc/profile.d/20-load-akv-env.sh \
     && chmod 0644 /etc/profile.d/20-load-akv-env.sh
+
 
 # Keep pip user bin on PATH for all users (bash shells)
 RUN echo 'export PATH="$HOME/.local/bin:$PATH"' >> /etc/bash.bashrc
