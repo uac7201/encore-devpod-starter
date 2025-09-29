@@ -42,6 +42,27 @@ pytest -q
 ---
 Made for DevPod + VS Code devcontainers.
 
+## installation
+
+setup a host:
+```
+devpod provider add docker --use
+```
+
+verify it is used:
+```
+devpod provider list
+```
+
+For podman set the DOCKER_HOST env variable:
+```
+$machine = '<YOUR-MACHINE-NAME>'
+$pipe = podman machine inspect $machine --format '{{.ConnectionInfo.PodmanPipe.Path}}'
+$env:DOCKER_HOST = "npipe://$($pipe -replace '\\','/')"
+
+docker ps   # should list containers (even if none)
+devpod provider use docker
+```
 
 ```
 devpod up encore-workspace `
