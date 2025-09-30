@@ -3,7 +3,7 @@
   // "build": {
   //   "dockerfile": "Dockerfile"
   // },
-  "image": "encore-devpod:local",
+  "image": "localhost/encore-devpod:local",
   "runArgs": [
     "--init",
     "--privileged"
