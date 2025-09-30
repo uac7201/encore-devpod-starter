@@ -3,7 +3,7 @@
   // "build": {
   //   "dockerfile": "Dockerfile"
   // },
-  "image": "encoreacrdev.azurecr.io/encore-devpod:d920524697ca4aef3bf6c0a3b63477e759dec3b3",
+  "image": "encore-devpod:local",
   "runArgs": [
     "--init",
     "--privileged"
