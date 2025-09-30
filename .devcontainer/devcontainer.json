@@ -6,7 +6,6 @@
   "command": ["/bin/sh", "-lc", "sleep infinity"],
 
   "remoteUser": "root",
-
   "features": {},
 
   "runArgs": [
