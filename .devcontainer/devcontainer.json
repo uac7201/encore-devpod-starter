@@ -16,7 +16,7 @@
     8888
   ],
   "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  //  "ghcr.io/devcontainers/features/docker-in-docker:2": {}
   },
   "mounts": [
     "source=${localEnv:MOUNT_PATH},target=/workspaces/,type=bind,consistency=cached"
