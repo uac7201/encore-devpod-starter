@@ -75,5 +75,7 @@ devpod up encore-workspace `
    --workspace-env AZURE_CLIENT_ID=$env:AZURE_CLIENT_ID `
    --workspace-env AZURE_CLIENT_SECRET=$env:AZURE_CLIENT_SECRET `
    --workspace-env AZURE_SUBSCRIPTION_ID=$env:AZURE_SUBSCRIPTION_ID `
-   --workspace-env AKV_VAULT_NAME=$env:AKV_VAULT_NAME
+   --workspace-env AKV_VAULT_NAME=$env:AKV_VAULT_NAME `
+   --workspace-env MOUNT_PATH=$env:MOUNT_PATH
 ```
+
