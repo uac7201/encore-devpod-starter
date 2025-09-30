@@ -5,33 +5,19 @@
   "overrideCommand": true,
   "command": ["/bin/sh", "-lc", "sleep infinity"],
 
-  "remoteUser": "root",            // switch back to "vscode" after first success
-  "features": {},                  // keep empty to avoid network pulls
+  "remoteUser": "root",
+  "features": {},
 
   "runArgs": [
     "--init",
-    "--security-opt", "label=disable"   // helpful with Podman on Windows; not privileged
+    "--security-opt", "label=disable"
   ],
 
-  // use a Docker volume instead of a host bind to avoid /workspaces errors
   "workspaceMount": "source=encore-workspaces,type=volume,target=/workspaces",
   "workspaceFolder": "/workspaces/encore-devpod-starter",
 
-  // disable for the first bring-up (reenable later if you want)
-  // "postCreateCommand": "...",
-  // "postStartCommand": "...",
-
   "forwardPorts": [4040, 8888],
-
   "remoteEnv": {
-    "SHELL": "/bin/sh",
-    "GH_HOST": "enercity.ghe.com",
-    "GHE_TOKEN": "${localEnv:GHE_TOKEN}",
-    "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}",
-    "AZURE_TENANT_ID": "${localEnv:AZURE_TENANT_ID}",
-    "AZURE_CLIENT_ID": "${localEnv:AZURE_CLIENT_ID}",
-    "AZURE_CLIENT_SECRET": "${localEnv:AZURE_CLIENT_SECRET}",
-    "AZURE_SUBSCRIPTION_ID": "${localEnv:AZURE_SUBSCRIPTION_ID}",
-    "AKV_VAULT_NAME": "${localEnv:AKV_VAULT_NAME}"
+    "SHELL": "/bin/sh"
   }
 }
