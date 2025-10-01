@@ -49,6 +49,11 @@ setup a host:
 devpod provider add docker --use
 ```
 
+or for kubernetes:
+```
+devpod provider add ".\.devcontainer\provider.yaml"
+```
+
 verify it is used:
 ```
 devpod provider list

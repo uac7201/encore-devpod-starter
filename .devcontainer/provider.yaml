@@ -1,0 +1,15 @@
+name: k8s-provider
+version: v0.0.1
+
+# This tells DevPod what provider type it is
+exec:
+  command: kubernetes
+
+agent:
+  driver: kubernetes
+  kubernetes:
+    namespace: devpod
+    context: aks-cluster-dev
+    persistentVolumeSize: 20Gi
+    createNamespace: true
+    # storageClassName: default
