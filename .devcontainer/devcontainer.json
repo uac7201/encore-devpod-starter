@@ -6,7 +6,7 @@
   "image": "docker.io/mabi/encore-devpod:local",
   "runArgs": [
     "--init",
-   // "--privileged"
+    "--privileged"
   ],
   // "onCreateCommand": "bash .devcontainer/clone-github-repos.sh",
   "postCreateCommand": "python -m pip install -U pip && pip install -r requirements.txt && python -m ipykernel install --user --name=devpod-spark && bash .devcontainer/fetch-akv-secrets.sh || true",
