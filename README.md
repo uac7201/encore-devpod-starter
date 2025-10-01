@@ -65,7 +65,7 @@ devpod provider use docker
 ```
 
 ```
-devpod up encore-workspace `
+devpod up encore-workspace-aks-demo `
   --source git:https://github.com/uac7201/encore-devpod-starter `
    --reset `
    --workspace-env GH_HOST=enercity.ghe.com `
