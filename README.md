@@ -46,12 +46,7 @@ Made for DevPod + VS Code devcontainers.
 
 setup a host:
 ```
-devpod provider add docker --use
-```
-
-or for kubernetes:
-```
-devpod provider add ".\.devcontainer\provider.yaml"
+devpod provider add kubernetes --use
 ```
 
 verify it is used:
@@ -72,7 +67,6 @@ devpod provider use docker
 ```
 devpod up encore-workspace-aks-demo `
   --source git:https://github.com/uac7201/encore-devpod-starter `
-   --reset `
    --workspace-env GH_HOST=enercity.ghe.com `
    --workspace-env GHE_TOKEN=$env:GHE_TOKEN `
    --workspace-env GITHUB_TOKEN=$env:GITHUB_TOKEN `
@@ -81,6 +75,9 @@ devpod up encore-workspace-aks-demo `
    --workspace-env AZURE_CLIENT_SECRET=$env:AZURE_CLIENT_SECRET `
    --workspace-env AZURE_SUBSCRIPTION_ID=$env:AZURE_SUBSCRIPTION_ID `
    --workspace-env AKV_VAULT_NAME=$env:AKV_VAULT_NAME `
-   --workspace-env MOUNT_PATH=$env:MOUNT_PATH
+   --workspace-env MOUNT_PATH=$env:MOUNT_PATH `
+   --provider-option DISK_SIZE=20Gi `
+   --provider-option KUBERNETES_NAMESPACE=devpod `
+   --provider-option CREATE_NAMESPACE=true 
 ```
 
